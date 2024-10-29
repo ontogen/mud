@@ -24,3 +24,6 @@ mud-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Ignore local Mud directory for development.
+/.mud
