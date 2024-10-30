@@ -25,11 +25,11 @@ defmodule Mud.ReferencableTest do
                   __additional_statements__: %{
                     ~I<http://example.com/foo> => %{RDF.XSD.Integer.new(42) => nil},
                     ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> => %{
-                      ~I<https://w3id.org/mud#Referencable> => nil
+                      ~I<https://w3id.org/mud#Referencable> => nil,
+                      ~I<http://example.com/TestReferencable> => nil
                     }
                   },
                   __id__: ~B<example>,
-                  __class__: ~I<http://example.com/TestReferencable>,
                   __ref__: "foo",
                   __hash__: nil
                 }}
@@ -54,11 +54,13 @@ defmodule Mud.ReferencableTest do
                   __additional_statements__: %{
                     ~I<http://example.com/foo> => %{RDF.XSD.Integer.new(42) => nil},
                     ~I<http://www.w3.org/1999/02/22-rdf-syntax-ns#type> => %{
-                      ~I<https://w3id.org/mud#Referencable> => nil
+                      ~I<https://w3id.org/mud#Referencable> => nil,
+                      ~I<http://example.com/TestReferencable> => nil,
+                      RDF.iri(EX.Class) => nil,
+                      RDF.iri(FOAF.Agent) => nil
                     }
                   },
                   __id__: ~B<example>,
-                  __class__: ~I<http://example.com/TestReferencable>,
                   __ref__: "foo",
                   __hash__: nil
                 }}
@@ -82,19 +84,29 @@ defmodule Mud.ReferencableTest do
     end
   end
 
-  describe "deref_id/1" do
+  test "new/2" do
+    assert {:error, %NotMinted{referencable: %{__ref__: "testReferencable"}}} =
+             Referencable.new("testReferencable")
+
+    assert {:ok, %Referencable{__id__: %IRI{value: "urn:uuid:" <> _}} = ref} =
+             Referencable.new("testReferencable", mint: true)
+
+    assert {:ok, ^ref} = Referencable.new("testReferencable", mint: true)
+    assert {:ok, ^ref} = Referencable.new("testReferencable")
+  end
+
+  describe "deref_id/1 and deref_id!/1" do
     test "when the id is not minted" do
       assert {:error, %NotMinted{referencable: %{__ref__: "testReferencable"}}} =
-               TestReferencable.deref_id("testReferencable")
+               Referencable.deref_id("testReferencable")
 
-      refute TestReferencable.deref_id!("testReferencable")
+      refute Referencable.deref_id!("testReferencable")
     end
 
     test "when the id is minted" do
-      assert {:ok, %Referencable{__id__: %IRI{value: "urn:uuid:" <> _} = id}} =
-               TestReferencable.mint("testReferencable")
+      assert {:ok, ref} = Referencable.mint("testReferencable")
 
-      assert ^id = TestReferencable.deref_id!("testReferencable")
+      assert Referencable.deref_id!("testReferencable") == ref.__id__
     end
   end
 
@@ -107,19 +119,17 @@ defmodule Mud.ReferencableTest do
     end
 
     test "when the id is minted, but not described in the graph" do
-      assert {:ok, %Referencable{}} = TestReferencable.mint("testReferencable")
+      assert {:ok, %Referencable{}} = Referencable.mint("testReferencable")
 
-      assert (test = TestReferencable.deref!("testReferencable", empty_graph())) ==
-               TestReferencable.build!(TestReferencable.deref_id!("testReferencable"))
-
-      assert ^test = TestReferencable.deref!("testReferencable", empty_graph())
+      assert TestReferencable.deref!("testReferencable", empty_graph()) ==
+               TestReferencable.build!(Referencable.deref_id!("testReferencable"))
     end
 
     test "when the id is minted and described in the graph" do
-      assert {:ok, %Referencable{}} = TestReferencable.mint("testReferencable")
+      assert {:ok, %Referencable{}} = Referencable.mint("testReferencable")
 
       assert (test = TestReferencable.deref!("testReferencable", test_graph())) ==
-               TestReferencable.build!(TestReferencable.deref_id!("testReferencable"),
+               TestReferencable.build!(Referencable.deref_id!("testReferencable"),
                  foo: "test"
                )
 
@@ -135,8 +145,8 @@ defmodule Mud.ReferencableTest do
       refute TestReferencable.this!("testReferencable", empty_graph())
     end
 
-    test "when the id is minted and described in the graph" do
-      assert {:ok, %Referencable{}} = TestReferencable.mint("testReferencable")
+    test "when the id is minted" do
+      assert {:ok, %Referencable{}} = Referencable.mint("testReferencable")
 
       assert %TestReferencable{} = test = TestReferencable.this!(test_graph())
 
@@ -156,11 +166,11 @@ defmodule Mud.ReferencableTest do
     end
 
     test "when the id is minted" do
-      assert {:ok, %Referencable{}} = TestReferencable.mint(:this)
+      assert {:ok, %Referencable{}} = Referencable.mint(TestReferencable.this_ref())
 
       assert {:ok, %IRI{value: "urn:uuid:" <> _} = id} = TestReferencable.this_id()
       assert ^id = TestReferencable.this_id!()
-      assert TestReferencable.this_id!() == TestReferencable.deref_id!("testReferencable")
+      assert TestReferencable.this_id!() == Referencable.deref_id!("testReferencable")
     end
   end
 

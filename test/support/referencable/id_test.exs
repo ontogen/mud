@@ -7,7 +7,7 @@ defmodule Mud.Referencable.IdTest do
   alias Mud.Referencable.Id
 
   test "generates deterministic URIs" do
-    ref = %Referencable{__ref__: "test", __class__: EX.TestClass}
+    ref = %Referencable{__ref__: "test"}
 
     {:ok, result1} = Id.generate(ref, mint: true)
     {:ok, result2} = Id.generate(ref)
@@ -17,8 +17,8 @@ defmodule Mud.Referencable.IdTest do
   end
 
   test "generates different URIs for different references" do
-    ref1 = %Referencable{__ref__: "test1", __class__: EX.TestClass}
-    ref2 = %Referencable{__ref__: "test2", __class__: EX.TestClass}
+    ref1 = %Referencable{__ref__: "test1"}
+    ref2 = %Referencable{__ref__: "test2"}
 
     {:ok, result1} = Id.generate(ref1, mint: true)
     {:ok, result2} = Id.generate(ref2, mint: true)
@@ -27,7 +27,7 @@ defmodule Mud.Referencable.IdTest do
   end
 
   test "requires minting for first access" do
-    ref = %Referencable{__ref__: "test", __class__: EX.TestClass}
+    ref = %Referencable{__ref__: "test"}
 
     assert {:error, %NotMinted{}} = Id.generate(ref)
     assert {:ok, result} = Id.generate(ref, mint: true)

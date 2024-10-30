@@ -38,7 +38,7 @@ defmodule Mud.PrecompilerTest do
     assert [%Literal{literal: %XSD.String{value: hash}}] =
              precompiled_description[Mud.refHash()]
 
-    assert hash == hkdf_hash(class: EX.TestReferencable, salt: salt)
+    assert hash == hkdf_hash(salt)
 
     assert %IRI{value: "urn:uuid:" <> uuid} = precompiled_description.subject
     assert uuid == UUID.uuid5(Mud.IdSpec.mud_uuid_namespace(), hash)
@@ -59,7 +59,6 @@ defmodule Mud.PrecompilerTest do
     assert {:ok, ^precompiled_graph} = Precompiler.precompile(mud_config_graph)
   end
 
-  @tag skip: "get rid of requirement for Grax schemas"
   test "resolves referencable object blank node description" do
     prefixes =
       RDF.turtle_prefixes(
@@ -139,7 +138,6 @@ defmodule Mud.PrecompilerTest do
     assert processed[s2][EX.label()] == [~L"2"]
   end
 
-  @tag skip: "get rid of requirement for Grax schemas"
   test "resolves mud:this" do
     prefixes =
       RDF.turtle_prefixes(
@@ -189,7 +187,6 @@ defmodule Mud.PrecompilerTest do
              |> Precompiler.precompile()
   end
 
-  @tag skip: "get rid of requirement for Grax schemas"
   test "resolves mud:I" do
     prefixes =
       RDF.turtle_prefixes(
@@ -317,16 +314,9 @@ defmodule Mud.PrecompilerTest do
     end)
   end
 
-  defp hkdf_hash(class: class, salt: salt) do
+  defp hkdf_hash(salt) do
     :sha256
-    |> HKDF.derive(
-      """
-      salt: #{salt}
-      class: #{IRI.to_string(class)}
-      """
-      |> String.trim_trailing(),
-      16
-    )
+    |> HKDF.derive(String.trim_trailing("salt: #{salt}"), 16)
     |> Base.encode16(case: :lower)
   end
 end

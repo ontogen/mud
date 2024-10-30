@@ -10,9 +10,6 @@ defmodule Mud.Referencable.Id do
   @hash_algorithm :sha256
   @hash_key_size 16
 
-  @hash_schema [:__class__]
-  def hash_schema, do: @hash_schema
-
   def generate(%Referencable{} = referencable, opts \\ []) do
     with {:ok, salt} <-
            (if Keyword.get(opts, :mint, false) do
@@ -20,7 +17,7 @@ defmodule Mud.Referencable.Id do
             else
               load_salt(referencable)
             end),
-         {:ok, hash_material} <- hash_material(referencable, salt) do
+         {:ok, hash_material} <- hash_material(salt) do
       {:ok,
        %Referencable{referencable | __hash__: generate_hash(hash_material, opts)}
        # reapply Grax.Id initialization to let Grax.Id resolve to the Grax.Id.Spec'ified URI
@@ -40,31 +37,9 @@ defmodule Mud.Referencable.Id do
     end
   end
 
-  defp hash_material(%Referencable{} = referencable, salt) do
-    {
-      :ok,
-      [
-        ["salt: ", salt]
-        | Enum.map(
-            @hash_schema,
-            &[
-              normalize_hash_material_field(&1),
-              ": ",
-              as_hash_material(Map.fetch!(referencable, &1))
-            ]
-          )
-      ]
-      |> Enum.intersperse("\n")
-      |> IO.iodata_to_binary()
-    }
+  defp hash_material(salt) do
+    {:ok, "salt: #{salt}"}
   end
-
-  defp normalize_hash_material_field(field) do
-    field |> to_string() |> String.replace("__", "")
-  end
-
-  defp as_hash_material(nil), do: ""
-  defp as_hash_material(value), do: to_string(value)
 
   defp load_or_generate_salt(%Referencable{} = ref) do
     case load_salt(ref) do
