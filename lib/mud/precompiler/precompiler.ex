@@ -3,8 +3,6 @@ defmodule Mud.Precompiler do
   alias RDF.{Graph, Description, BlankNode}
   alias Mud.Referencable
 
-  @i_agent_class FOAF.Agent
-
   @spec precompile(Graph.t(), keyword) :: {:ok, Graph.t()} | {:error, any}
   def precompile(%Graph{} = graph, opts \\ []) do
     graph
@@ -47,8 +45,8 @@ defmodule Mud.Precompiler do
 
   defp me_as_referencable(me) do
     me
-    |> RDF.type(@i_agent_class)
-    |> Mud.ref("agent")
+    |> RDF.type(Mud.i_class())
+    |> Mud.ref(Mud.i_ref())
   end
 
   defp resolve_this_indexical(graph, _opts) do

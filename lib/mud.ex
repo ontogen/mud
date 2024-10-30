@@ -4,6 +4,15 @@ defmodule Mud do
 
   act_as_namespace Mud.NS.Mud
 
+  @default_i_class RDF.iri(FOAF.Agent)
+  def i_class do
+    Application.get_env(:mud, :i_class, @default_i_class)
+  end
+
+  def i_ref do
+    Application.get_env(:mud, :i_ref, Mud.Referencable.this_ref(i_class()))
+  end
+
   @default_salt_base_path ".mud/.ref_salts/"
 
   def salt_base_path do

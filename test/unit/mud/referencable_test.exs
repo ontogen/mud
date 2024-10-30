@@ -180,6 +180,7 @@ defmodule Mud.ReferencableTest do
 
   test "this_ref/1" do
     assert Referencable.this_ref(~I<https://example.com/random#Thing>) == "thing"
+    assert Referencable.this_ref(EX.Thing) == "thing"
     assert Referencable.this_ref(FOAF.Agent) == "agent"
 
     assert_raise RuntimeError, fn ->

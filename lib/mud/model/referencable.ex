@@ -6,6 +6,7 @@ defmodule Mud.Referencable do
   alias Mud.Referencable.Id
 
   import Mud.Utils, only: [bang!: 2]
+  import RDF.Utils.Guards
 
   schema Mud.Referencable do
     # This field is for local use only, it MUST NOT be stored or hashed!
@@ -147,7 +148,15 @@ defmodule Mud.Referencable do
     end
   end
 
-  def this_ref(schema), do: schema.__class__() |> RDF.iri() |> this_ref()
+  def this_ref(schema_or_ns_term) when maybe_module(schema_or_ns_term) do
+    if Grax.Schema.schema?(schema_or_ns_term) do
+      schema_or_ns_term.__class__()
+    else
+      schema_or_ns_term
+    end
+    |> RDF.iri()
+    |> this_ref()
+  end
 
   def on_to_rdf(%{__id__: id}, graph, _opts) do
     {
