@@ -28,4 +28,7 @@ defmodule Mud do
   defdelegate precompile(graph, opts \\ []), to: Mud.Precompiler
 
   def precompile!(graph, opts \\ []), do: bang!(&precompile/2, [graph, opts])
+
+  defdelegate deref_id(ref), to: Mud.Referencable
+  defdelegate deref_id!(ref), to: Mud.Referencable
 end
