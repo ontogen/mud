@@ -6,7 +6,7 @@ defmodule Mud.NS do
   use RDF.Vocabulary.Namespace
 
   @vocabdoc """
-  The vocabulary for the precompiled Mud language.
+  The vocabulary for the Mud language.
 
   See <https://w3id.org/mud/spec>
   """

@@ -23,11 +23,11 @@ mud:Referencable a rdfs:Class
 
 mud:this a rdf:Property
     ; rdfs:domain mud:Referencable
-    ; rdfs:comment "This property will be resolved by the precompiler to `a {class} ; mud:ref {lower-cased(class)}`"
+    ; rdfs:comment "This property will be resolved by the Mud processor to `a {class} ; mud:ref {lower-cased(class)}`"
     ; rdfs:comment "This property is intended to have RDFS classes as its range. However, to maintain compatibility with various OWL profiles, we deliberately omit a formal rdfs:range definition."
 .
 
 mud:I a owl:NamedIndividual
-    ; rdfs:comment "This resource will be resolved by the precompiler to `[a og:Agent ; mud:ref \"agent\"]`"
+    ; rdfs:comment "This resource will be resolved by the Mud processor to `[a og:Agent ; mud:ref \"agent\"]`"
 .
 

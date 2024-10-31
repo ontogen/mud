@@ -1,9 +1,9 @@
-defmodule Mud.PrecompilerTest do
+defmodule Mud.ProcessorTest do
   use MudCase
 
-  doctest Mud.Precompiler
+  doctest Mud.Processor
 
-  alias Mud.{Precompiler, Referencable}
+  alias Mud.{Processor, Referencable}
 
   alias RDF.Description
 
@@ -16,7 +16,7 @@ defmodule Mud.PrecompilerTest do
 
     refute File.exists?(salt_file_path)
 
-    mud_config_graph =
+    graph =
       """
       #{prefixes}
 
@@ -28,22 +28,22 @@ defmodule Mud.PrecompilerTest do
       """
       |> Turtle.read_string!()
 
-    assert {:ok, %Graph{} = precompiled_graph} = Precompiler.precompile(mud_config_graph)
+    assert {:ok, %Graph{} = processed_graph} = Processor.process(graph)
 
     assert File.exists?(salt_file_path)
     salt = File.read!(salt_file_path)
 
-    assert [precompiled_description] = Graph.descriptions(precompiled_graph)
+    assert [processed_description] = Graph.descriptions(processed_graph)
 
     assert [%Literal{literal: %XSD.String{value: hash}}] =
-             precompiled_description[Mud.refHash()]
+             processed_description[Mud.refHash()]
 
     assert hash == hkdf_hash(salt)
 
-    assert %IRI{value: "urn:uuid:" <> uuid} = precompiled_description.subject
+    assert %IRI{value: "urn:uuid:" <> uuid} = processed_description.subject
     assert uuid == UUID.uuid5(Mud.IdSpec.mud_uuid_namespace(), hash)
 
-    assert precompiled_graph ==
+    assert processed_graph ==
              """
              #{prefixes}
 
@@ -55,8 +55,8 @@ defmodule Mud.PrecompilerTest do
              """
              |> Turtle.read_string!()
 
-    assert {:ok, ^precompiled_graph} = Precompiler.precompile(mud_config_graph)
-    assert {:ok, ^precompiled_graph} = Precompiler.precompile(mud_config_graph)
+    assert {:ok, ^processed_graph} = Processor.process(graph)
+    assert {:ok, ^processed_graph} = Processor.process(graph)
   end
 
   test "resolves referencable object blank node description" do
@@ -67,7 +67,7 @@ defmodule Mud.PrecompilerTest do
         foaf: FOAF
       )
 
-    mud_config_graph =
+    graph =
       """
       #{prefixes}
 
@@ -89,7 +89,7 @@ defmodule Mud.PrecompilerTest do
       """
       |> Turtle.read_string!()
 
-    assert {:ok, %Graph{} = graph} = Precompiler.precompile(mud_config_graph)
+    assert {:ok, %Graph{} = graph} = Processor.process(graph)
 
     ref_indexed_graph = ref_indexed(graph)
     foo_id = ref_indexed_graph[:foo].subject
@@ -131,7 +131,7 @@ defmodule Mud.PrecompilerTest do
       """
       |> Turtle.read_string!()
 
-    {:ok, processed} = Precompiler.precompile(graph)
+    {:ok, processed} = Processor.process(graph)
 
     [%{s1: s1, s2: s2}] = Graph.query(processed, {:s2?, EX.relatedTo(), :s1?})
     assert processed[s1][EX.label()] == [~L"1"]
@@ -163,7 +163,7 @@ defmodule Mud.PrecompilerTest do
            ].
            """
            |> Turtle.read_string!()
-           |> Precompiler.precompile() ==
+           |> Processor.process() ==
              """
              #{prefixes}
 
@@ -184,7 +184,7 @@ defmodule Mud.PrecompilerTest do
              ].
              """
              |> Turtle.read_string!()
-             |> Precompiler.precompile()
+             |> Processor.process()
   end
 
   test "resolves mud:I" do
@@ -204,7 +204,7 @@ defmodule Mud.PrecompilerTest do
            .
            """
            |> Turtle.read_string!()
-           |> Precompiler.precompile() ==
+           |> Processor.process() ==
              """
              #{prefixes}
 
@@ -216,7 +216,7 @@ defmodule Mud.PrecompilerTest do
              ].
              """
              |> Turtle.read_string!()
-             |> Precompiler.precompile()
+             |> Processor.process()
 
     assert """
            #{prefixes}
@@ -233,7 +233,7 @@ defmodule Mud.PrecompilerTest do
            .
            """
            |> Turtle.read_string!()
-           |> Precompiler.precompile() ==
+           |> Processor.process() ==
              """
              #{prefixes}
 
@@ -253,13 +253,13 @@ defmodule Mud.PrecompilerTest do
              ].
              """
              |> Turtle.read_string!()
-             |> Precompiler.precompile()
+             |> Processor.process()
   end
 
   test "with non-referencable blank nodes" do
     prefixes = RDF.turtle_prefixes(ex: EX)
 
-    turtle_config_graph =
+    graph =
       """
       #{prefixes}
 
@@ -270,11 +270,11 @@ defmodule Mud.PrecompilerTest do
       """
       |> Turtle.read_string!()
 
-    assert {:ok, ^turtle_config_graph} = Precompiler.precompile(turtle_config_graph)
+    assert {:ok, ^graph} = Processor.process(graph)
   end
 
   test "when multiple refs for the same subject are defined" do
-    mud_config_graph =
+    graph =
       """
       #{RDF.turtle_prefixes(ex: EX, mud: Mud)}
 
@@ -286,7 +286,7 @@ defmodule Mud.PrecompilerTest do
       |> Turtle.read_string!()
 
     assert {:error, %Grax.ValidationError{errors: [__ref__: _]}} =
-             Precompiler.precompile(mud_config_graph)
+             Processor.process(graph)
   end
 
   test "ignores non-referencable blank nodes" do
@@ -299,7 +299,7 @@ defmodule Mud.PrecompilerTest do
       """
       |> Turtle.read_string!()
 
-    assert {:ok, ^graph} = Precompiler.precompile(graph)
+    assert {:ok, ^graph} = Processor.process(graph)
   end
 
   defp ref_indexed(%Graph{} = graph), do: graph |> Graph.descriptions() |> ref_indexed()

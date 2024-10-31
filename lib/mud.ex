@@ -25,9 +25,9 @@ defmodule Mud do
     base_salt_path
   end
 
-  defdelegate precompile(graph, opts \\ []), to: Mud.Precompiler
+  defdelegate process(graph, opts \\ []), to: Mud.Processor
 
-  def precompile!(graph, opts \\ []), do: bang!(&precompile/2, [graph, opts])
+  def process!(graph, opts \\ []), do: bang!(&process/2, [graph, opts])
 
   defdelegate deref_id(ref), to: Mud.Referencable
   defdelegate deref_id!(ref), to: Mud.Referencable

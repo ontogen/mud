@@ -1,10 +1,10 @@
-defmodule Mud.Precompiler do
+defmodule Mud.Processor do
   use RDF
   alias RDF.{Graph, Description, BlankNode}
   alias Mud.Referencable
 
-  @spec precompile(Graph.t(), keyword) :: {:ok, Graph.t()} | {:error, any}
-  def precompile(%Graph{} = graph, opts \\ []) do
+  @spec process(Graph.t(), keyword) :: {:ok, Graph.t()} | {:error, any}
+  def process(%Graph{} = graph, opts \\ []) do
     graph
     |> resolve_indexicals(opts)
     |> resolve_referencables(opts)
@@ -60,7 +60,7 @@ defmodule Mud.Precompiler do
   end
 
   defp resolve_referencables(graph, opts) do
-    with {:ok, precompiled_resources} <-
+    with {:ok, processed_resources} <-
            graph
            |> Graph.query({:subject?, Mud.ref(), :ref?})
            |> RDF.Utils.map_while_ok(fn %{subject: subject, ref: _ref} ->
@@ -69,21 +69,21 @@ defmodule Mud.Precompiler do
                {:ok, {subject, resolved_referencable}}
              end
            end) do
-      with_precompiled_subjects =
-        Enum.reduce(precompiled_resources, graph, fn
-          {resource, resolved_referencable}, precompiled_graph ->
-            precompiled_graph
+      with_processed_subjects =
+        Enum.reduce(processed_resources, graph, fn
+          {resource, resolved_referencable}, processed_graph ->
+            processed_graph
             |> Graph.add(Grax.to_rdf!(resolved_referencable, prefixes: []))
             |> Graph.delete_descriptions(resource)
         end)
 
-      precompiled_graph =
-        Enum.reduce(precompiled_resources, with_precompiled_subjects, fn
-          {resource, resolved_referencable}, precompiled_graph ->
-            rename(precompiled_graph, resource, resolved_referencable.__id__)
+      processed_graph =
+        Enum.reduce(processed_resources, with_processed_subjects, fn
+          {resource, resolved_referencable}, processed_graph ->
+            rename(processed_graph, resource, resolved_referencable.__id__)
         end)
 
-      {:ok, precompiled_graph}
+      {:ok, processed_graph}
     end
   end
 
